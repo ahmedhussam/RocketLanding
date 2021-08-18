@@ -110,22 +110,29 @@ namespace RocketLanding
 
         private void AddToRocketCheckedPosition(Guid rocketId, Coordinates rocketPosition)
         {
-            if(RocketsCheckedPositions.ContainsKey(rocketId))
-                RocketsCheckedPositions[rocketId] = rocketPosition;
-            else
+            if (!RocketsCheckedPositions.ContainsKey(rocketId))
                 RocketsCheckedPositions.Add(rocketId, rocketPosition);
         }
 
-        private void RemovePreviousPostions(Guid rocketId)
+        private Coordinates RemovePreviousPostions(Guid rocketId)
         {
             if (!RocketsCheckedPositions.ContainsKey(rocketId))
-                return;
+                return null;
 
             var prevPosition = RocketsCheckedPositions[rocketId];
 
             var allPositions=GetAllPositions(prevPosition);
 
+            RemoveFromRocketCheckedPositions(rocketId);
             RemoveFromRegistry(allPositions);
+
+            return prevPosition;
+
+        }
+
+        private void RemoveFromRocketCheckedPositions(Guid rocketId)
+        {
+            RocketsCheckedPositions.Remove(rocketId);
         }
 
         private void RemoveFromRegistry(List<Coordinates> allPositions)
@@ -147,9 +154,13 @@ namespace RocketLanding
             if (IsPrevPositionSamePosition(rocketId, rocketPosition))
                 return false;
 
-            RemovePreviousPostions(rocketId);
+            var prevPosition=RemovePreviousPostions(rocketId);
 
-            return PlaformReserverdPositions.ContainsKey(rocketPosition);
+            var isValidPosition=PlaformReserverdPositions.ContainsKey(rocketPosition);
+            if (!isValidPosition && prevPosition!=null)
+                RegisterRocketPosition(rocketId, prevPosition);
+
+            return isValidPosition;
         }
 
         private bool CheckOutOfPlatform(Coordinates rocketPosition)
